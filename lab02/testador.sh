@@ -19,7 +19,7 @@ COL_BOLD=$ESC_SEQ";1m"
 
 
 turma="mc458abcd"
-lab="01"
+lab="02"
 
 echo $turma
 
