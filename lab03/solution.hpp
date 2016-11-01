@@ -53,3 +53,22 @@ vector<ppi> solution(vector<vector<ppi> > & input,int M) {
     return out;
 }
 
+int particione(vector <ppi> & escola, int p, int r, int N) {
+    ppi pivo = escola[r];
+    int i = p-1;
+
+    for (int j = p; j < r; j++) {
+        if (escola[j].first.compare(pivo.first) <= 0) {
+            i++;
+            swap (&escola[i], &escola[j]);
+        }
+    }
+    swap(&escola[i+1], &escola[r]);
+    return i+1;
+}
+
+void swap(ppi *a, ppi *b) {
+    ppi aux = *a;
+    *a = *b;
+    *b = aux;
+}
