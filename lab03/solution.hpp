@@ -3,7 +3,7 @@
 #include <iostream>
 #include <utility>
 #include <stdlib.h>
-
+#include <algorithm>
 
 using namespace std;
 
@@ -53,7 +53,48 @@ vector<ppi> solution(vector<vector<ppi> > & input,int M) {
     return out;
 }
 
-int particione(vector <ppi> & escola, int p, int r, int N) {
+bool compare (ppi a, ppi b) {
+    if (a.first.compare(b.first) == -1)
+        return true;
+    return false;
+}
+
+int particioneBFPRT(vector <ppi> & escola, int p, int r) {
+    int n = r-p+1;
+    int n5_u, n5_d, i, j;
+
+    n5_u = n5_d = n/5;
+    if (n % 5 != 0) n5_u++;
+
+    for (j = p, i = 0; i < n5_d ; j += 5, i++)
+        sort_heap(escola.begin()+j, escola.begin()+j+4, bool (*compare)(ppi,ppi));
+    if (j < r)
+        sort_heap(escola.begin()+j, escola.begin()+r, bool (*compare)(ppi,ppi));
+
+    for (j = 1; j < n5_u-1; j++) {
+        swap(&escola[j], &escola[p + 5*j - 3]);
+        swap(&escola[n5_u], &escola[(p + 5*n5_d + n)/2]);
+    }
+
+    int k = select(escola, p, p+n5_u-1, (int) (n5_u+1)/2);
+
+    swap(&escola[k], &escola[r]);
+
+    return particione(escola,p,r);
+}
+
+int select(vector <ppi> & escola, int p, int r, int i) {
+    if (p == r) return p;
+
+    int q = particioneBFPRT(escola,p,r);
+    int k = q - p + 1;
+
+    if (i == k) return q;
+    else if (i < k) return select(escola, p, q-1, i);
+    else return select(escola, q+1, r, i-k);
+}
+
+int particione(vector <ppi> & escola, int p, int r) {
     ppi pivo = escola[r];
     int i = p-1;
 
