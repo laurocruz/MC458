@@ -1,9 +1,12 @@
+// Lauro Cruz e Souza
+// RA: 156175
+// email: laurocruzsouza@gmail.com | lauro.souza@students.ic.unicamp.br
+
 #include "pint.hpp"
 #include <vector>
 #include <iostream>
 #include <utility>
 #include <stdlib.h>
-#include <algorithm>
 
 using namespace std;
 
@@ -11,87 +14,85 @@ using namespace std;
 typedef pair<int,int> pii;
 typedef pair<Pint,int> ppi;
 
+void mergeSort(vector<ppi> & input, int p, int r);
+int particione(vector <ppi> & escola, int p, int r);
+int particione_random(vector <ppi> & escola, int p, int r);
+int select_random(vector <ppi> & escola, int p, int r, int i);
+void swapf(vector <ppi> & escola, int a, int b);
+
 //retorna o custo total
 vector<ppi> solution(vector<vector<ppi> > & input,int M) {
-    vector<ppi> out(0);
+    int K = input.size();
+    int N = input[0].size();
 
-    //usando pares
-    // o atributo first retorna o primeiro elemento do par
-    // o atributo second retorna o segundo atributo do par ( e pode ser setado)
-    ppi par_pint_int;
-    par_pint_int.first = Pint(2);
-    par_pint_int.second = 3;
+    // Teto de vagas por escola
+    int VpE = M/K;
+    if (M%K != 0) VpE++;
 
-    par_pint_int.first.print();
-    cout << endl;
-    cout << par_pint_int.second << endl;
+    vector<ppi> out(M);
+    vector<ppi> medias(K);
 
-    //dicas
-    //soma:
-    Pint soma = input[0][0].first + input[1][0].first;
-    input[0][0].first.print();
-    cout << " + ";
-    input[1][0].first.print();
-    cout << " = ";
-    soma.print();
-    cout << endl;
+    for (int i = 0; i < K; i++) {
+        medias[i].second = i;
+        for (int j = 0; j < N; j++) {
+            medias[i].first = medias[i].first + input[i][j].first;
+        }
+        medias[i].first = medias[i].first/Pint(N);
+        select_random(input[i], 0, N-1, N-VpE+1);
+        mergeSort(input[i], N-VpE, N-1);
+    }
 
-    //divisao:
-    Pint divide = input[1][0].first / input[0][0].first;
-    input[1][0].first.print();
-    cout << " / ";
-    input[0][0].first.print();
-    cout << " = ";
-    divide.print();
-    cout << endl;
+    mergeSort(medias, 0, K-1);
 
-    //tamanho da entrada:
-    cout << input.size() << endl;
-    // comparando: input[99].compare(input[2]) == 0 // iguais
-    //             input[99].compare(input[2]) == -1 // input[99] < input[2]
-    //             input[99].compare(input[2]) == 1 // input[99] > input[2]
+    int k = 0;
+    for (int i = N-VpE; i < N && k < M; i++) {
+        for (int j = 0; j < K && k < M; j++) {
+            out[k++] = input[medias[j].second][i];
+        }
+    }
+
     return out;
 }
 
-bool compare (ppi a, ppi b) {
-    if (a.first.compare(b.first) == -1)
-        return true;
-    return false;
-}
-
-int particioneBFPRT(vector <ppi> & escola, int p, int r) {
+void mergeSort(vector<ppi> & input, int p, int r) {
     int n = r-p+1;
-    int n5_u, n5_d, i, j;
 
-    n5_u = n5_d = n/5;
-    if (n % 5 != 0) n5_u++;
+    if (n == 1) return;
 
-    for (j = p, i = 0; i < n5_d ; j += 5, i++)
-        sort_heap(escola.begin()+j, escola.begin()+j+4, bool (*compare)(ppi,ppi));
-    if (j < r)
-        sort_heap(escola.begin()+j, escola.begin()+r, bool (*compare)(ppi,ppi));
+    int af = p - 1 + n/2;
+    int bi = af + 1;
 
-    for (j = 1; j < n5_u-1; j++) {
-        swap(&escola[j], &escola[p + 5*j - 3]);
-        swap(&escola[n5_u], &escola[(p + 5*n5_d + n)/2]);
+    mergeSort(input, p, af);
+    mergeSort(input, bi, r);
+
+    vector<ppi> in_aux (n);
+    int j,l,k;
+
+    for (j = p; j <= af; j++) {
+        in_aux[j-p] = input[j];
+    }
+    for (j = bi; j <= r; j++) {
+        in_aux[n + bi - j - 1] = input[j];
     }
 
-    int k = select(escola, p, p+n5_u-1, (int) (n5_u+1)/2);
+    j = 0; l = r-p;
 
-    swap(&escola[k], &escola[r]);
+    for (k = p; k <= r && j <= af-p && l >= n + bi - r - 1; k++) {
+        if (in_aux[j].first.compare(in_aux[l].first) >= 0) {
+            input[k] = in_aux[j];
+            j++;
+        } else {
+            input[k] = in_aux[l];
+            l--;
+        }
+    }
 
-    return particione(escola,p,r);
-}
-
-int select(vector <ppi> & escola, int p, int r, int i) {
-    if (p == r) return p;
-
-    int q = particioneBFPRT(escola,p,r);
-    int k = q - p + 1;
-
-    if (i == k) return q;
-    else if (i < k) return select(escola, p, q-1, i);
-    else return select(escola, q+1, r, i-k);
+    for (k = k; k <= r && j <= af-p; k++, j++) {
+        input[k] = in_aux[j];
+    }
+    for (k = k; k <= r && l >= n+bi-r-1; k++, l--) {
+        input[k] = in_aux[l];
+    }
 }
 
 int particione(vector <ppi> & escola, int p, int r) {
@@ -99,17 +100,40 @@ int particione(vector <ppi> & escola, int p, int r) {
     int i = p-1;
 
     for (int j = p; j < r; j++) {
+
         if (escola[j].first.compare(pivo.first) <= 0) {
             i++;
-            swap (&escola[i], &escola[j]);
+            swapf(escola, i, j);
         }
+
     }
-    swap(&escola[i+1], &escola[r]);
+    swapf(escola, i+1, r);
     return i+1;
 }
 
-void swap(ppi *a, ppi *b) {
-    ppi aux = *a;
-    *a = *b;
-    *b = aux;
+int particione_random(vector <ppi> & escola, int p, int r) {
+    int n = r - p + 1;
+    int j = rand() % n + p;
+
+    swapf(escola,j,r);
+
+    return particione(escola,p,r);
 }
+
+int select_random(vector<ppi> & escola, int p, int r, int i) {
+    if (p == r) return p;
+
+    int q = particione_random(escola, p, r);
+    int k = q - p + 1;
+
+    if (i == k) return q;
+    else if (i < k) return select_random(escola,p,q-1,i);
+    else return select_random(escola,q+1,r,i-k);
+}
+
+void swapf(vector <ppi> & escola, int a, int b) {
+    ppi aux = escola[a];
+    escola[a] = escola[b];
+    escola[b] = aux;
+}
+
